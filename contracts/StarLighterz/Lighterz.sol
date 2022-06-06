@@ -117,6 +117,13 @@ contract Lighterz is
     }
 
     /**
+     * @notice mintRemains is used to calculate how many tokens remains
+     */
+    function mintRemains() public view returns (uint256) {
+        return MAX_SUPPLY - totalMinted();
+    }
+
+    /**
      * @notice getRandomTokenId is used to randomly select an unused tokenId.
      * @return randomly selected tokenId.
      */
