@@ -95,8 +95,8 @@ contract LighterzMintPass is
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
-    constructor(string memory baseURI_)
-        ERC721A("Pass: Into The Forbidden-907", "LTZ_MP")
+    constructor(string memory baseURI_, string memory passName_)
+        ERC721A(passName_, "LTZ_MP")
     {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(PAUSER_ROLE, msg.sender);
