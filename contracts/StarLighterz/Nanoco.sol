@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 contract LighterzNanoco is
@@ -16,8 +15,6 @@ contract LighterzNanoco is
     Pausable,
     ReentrancyGuard
 {
-    using Counters for Counters.Counter;
-
     event ContractSealed();
     event BaseURIChanged(string newBaseURI);
     event Withdraw(address indexed account, uint256 amount);
@@ -116,24 +113,12 @@ contract LighterzNanoco is
         uint256 price_
     ) internal {
         require(quantity_ > 0, "invalid number of tokens");
-        require(totalSupply() + quantity_ < MAX_SUPPLY, "Exceeds max supply");
+        require(totalMinted() + quantity_ < MAX_SUPPLY, "Exceeds max supply");
 
         uint256 amount = price_ * quantity_;
         require(amount <= msg.value, "transaction value is not enough.");
 
         _safeMint(recipient_, quantity_);
-
-        refundExcessPayment(amount);
-    }
-
-    /**
-     * @notice when the amount paid by the user exceeds the actual need, the refund logic will be executed.
-     * @param amount_ the actual amount that should be paid
-     */
-    function refundExcessPayment(uint256 amount_) private {
-        if (msg.value > amount_) {
-            Address.sendValue(payable(_msgSender()), msg.value - amount_);
-        }
     }
 
     function numberMinted(address owner) public view returns (uint256) {
@@ -153,14 +138,14 @@ contract LighterzNanoco is
     // Mapping from scope to claiming address
     mapping(address => mapping(uint256 => address)) private claimed;
     // claimer of the nanoco
-    mapping(address => bool) private authorizedClaimer;
+    mapping(address => bool) private authorizedDistributors;
 
     /**
      * @notice add a claimed record to the caller scope
      */
     function distribute(uint256 tokenId_) public returns (address) {
         address scope = _msgSender(); // can be any address/contract
-        require(authorizedClaimer[scope], "not authorized");
+        require(authorizedDistributors[scope], "not authorized");
         require(claimable(scope, tokenId_), "Already claimed");
 
         address owner = ownerOf(tokenId_);
@@ -179,15 +164,15 @@ contract LighterzNanoco is
         return claimed[scope_][tokenId_] == address(0);
     }
 
-    function setAuthorizedClaimer(address scope_, bool authorized)
+    function setAuthorizedDistributors(address scope_, bool authorized)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         require(
-            authorizedClaimer[scope_] != authorized,
+            authorizedDistributors[scope_] != authorized,
             "Cannot update same value"
         );
-        authorizedClaimer[scope_] = authorized;
+        authorizedDistributors[scope_] = authorized;
 
         emit ScopeClaimerUpdated(scope_, authorized);
     }
